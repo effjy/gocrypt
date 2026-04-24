@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>secure_mount - gocryptfs Manager</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            margin: 2em auto;
+            max-width: 860px;
+            padding: 0 1em;
+            color: #333;
+            background: #fff;
+        }
+        h1 { font-size: 2.2em; border-bottom: 2px solid #eee; padding-bottom: .3em; }
+        h2 { font-size: 1.6em; border-bottom: 1px solid #eee; padding-bottom: .2em; margin-top: 1.8em; }
+        h3 { font-size: 1.25em; margin-top: 1.4em; }
+        code {
+            background: #f5f5f5;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 1em;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 0.9em;
+        }
+        pre code { background: none; padding: 0; }
+        blockquote {
+            border-left: 4px solid #d0d7de;
+            padding: 0.5em 1em;
+            margin: 1em 0;
+            color: #57606a;
+        }
+        a { color: #0969da; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        table { border-collapse: collapse; margin: 1em 0; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+        th { background: #f6f8fa; }
+        .badge { display: inline-block; margin: 0 2px; }
+        .badge img { vertical-align: middle; }
+        .center { text-align: center; }
+        hr { border: 0; border-top: 1px solid #eee; margin: 2em 0; }
+        ul, ol { padding-left: 2em; }
+        @media (prefers-color-scheme: dark) {
+            body { background: #0d1117; color: #c9d1d9; }
+            h1, h2 { border-color: #30363d; }
+            code, pre { background: #161b22; }
+            table th { background: #161b22; }
+            td, th { border-color: #30363d; }
+            a { color: #58a6ff; }
+            blockquote { border-left-color: #30363d; color: #8b949e; }
+        }
+    </style>
+</head>
+<body>
+    <h1>🔒 secure_mount</h1>
+
+    <div class="center">
+        <img class="badge" src="https://img.shields.io/badge/language-C-green" alt="Language: C">
+        <img class="badge" src="https://img.shields.io/badge/license-MIT-yellow" alt="License: MIT">
+        <a href="https://github.com/effjy/secure_mount"><img class="badge" src="https://img.shields.io/github/stars/effjy/secure_mount?style=social" alt="GitHub stars"></a>
+    </div>
+
+    <p class="center">
+        <strong>A menu‑driven, secure wrapper for gocryptfs that simplifies initializing, mounting, and unmounting encrypted filesystems.</strong><br>
+        <em>No more memorising command‑line flags – just pick an option, enter your paths, and let it handle the rest.</em>
+    </p>
+
+    <hr>
+
+    <h2>✨ Features</h2>
+    <ul>
+        <li><strong>🧭 Simple interactive menu</strong> – 3 core operations accessible with a single key press.</li>
+        <li><strong>🔐 gocryptfs integration</strong> – Mounts gocryptfs‑encrypted directories with a clean interface; all password prompts are handled by gocryptfs itself.</li>
+        <li><strong>🧹 Clean initialisation</strong> – Creates the cipher directory with <code>0700</code> permissions, runs <code>gocryptfs -init</code>, and walks you through the master password creation.</li>
+        <li><strong>🧲 Smart unmounting</strong> – Tries <code>fusermount3</code>, falls back to <code>fusermount</code>, and even tries <code>umount</code> if needed – making it resilient across different systems.</li>
+        <li><strong>🛡️ Security hardening</strong> – Disables core dumps (<code>prctl(PR_SET_DUMPABLE, 0)</code>) to prevent sensitive memory from leaking to disk.</li>
+        <li><strong>📁 Path validation</strong> – Refuses to mount if the cipher and mount point are the same directory, checks for existence, and auto‑creates the mount point with safe permissions.</li>
+        <li><strong>🪶 Tiny footprint</strong> – Single C file, compiles to a small, static binary; no additional dependencies beyond a working gocryptfs and standard POSIX tools.</li>
+    </ul>
+
+    <h2>📦 Installation</h2>
+    <h3>Requirements</h3>
+    <ul>
+        <li><strong>gocryptfs</strong> installed and available in <code>$PATH</code> (see <a href="https://github.com/rfjakob/gocryptfs#installation">gocryptfs installation guide</a>)</li>
+        <li><strong>FUSE</strong> utilities (typically pre‑installed on Linux)</li>
+        <li>A C compiler (<code>gcc</code> or <code>clang</code>)</li>
+    </ul>
+
+    <h3>Build</h3>
+    <pre><code>git clone https://github.com/effjy/secure_mount.git
+cd secure_mount
+gcc secure_mount.c -o secure_mount -O2
+
+# Optional: static build
+gcc secure_mount.c -o secure_mount -static -O2</code></pre>
+
+    <p>Move the binary to a location in your <code>$PATH</code>:</p>
+    <pre><code>sudo cp secure_mount /usr/local/bin/</code></pre>
+
+    <h3>Run</h3>
+    <pre><code>./secure_mount</code></pre>
+    <p>The menu will appear:</p>
+    <pre><code>========================================
+       Secure gocryptfs Manager
+========================================
+ [1] Mount encrypted partition
+ [2] Unmount encrypted partition
+ [3] Initialize new encrypted partition
+ [4] Exit
+========================================
+Select an option:</code></pre>
+
+    <h2>🎮 Usage</h2>
+    <h3>1. Initialise a new encrypted filesystem</h3>
+    <ul>
+        <li>Choose <strong>option 3</strong>.</li>
+        <li>Enter the path where encrypted data will be stored (e.g., <code>/home/user/vault/encrypted</code>).</li>
+        <li><code>secure_mount</code> creates the directory with <code>0700</code> permissions and calls <code>gocryptfs -init</code>.</li>
+        <li>Follow the on‑screen gocryptfs prompts to set and confirm a master password.</li>
+        <li>Your encrypted volume is ready to be mounted.</li>
+    </ul>
+
+    <h3>2. Mount an existing volume</h3>
+    <ul>
+        <li>Choose <strong>option 1</strong>.</li>
+        <li>Provide the <strong>cipher directory</strong> (the folder containing <code>gocryptfs.diriv</code> and encrypted files).</li>
+        <li>Provide the <strong>mount point</strong> (the folder where you want to see the decrypted files).</li>
+        <li>If the mount point doesn’t exist, it will be created automatically with <code>0700</code> permissions.</li>
+        <li>The program then executes <code>gocryptfs &lt;cipher&gt; &lt;mount&gt;</code>. You’ll be prompted by gocryptfs for the master password.</li>
+    </ul>
+
+    <h3>3. Unmount a volume</h3>
+    <ul>
+        <li>Choose <strong>option 2</strong>.</li>
+        <li>Enter the mount point path.</li>
+        <li><code>secure_mount</code> attempts to unmount using <code>fusermount3 -u</code>, falls back to <code>fusermount -u</code>, and finally <code>umount</code> if necessary.</li>
+        <li>The volume is safely detached.</li>
+    </ul>
+
+    <h2>🔐 Security Considerations</h2>
+    <ul>
+        <li><strong>Core dumps disabled</strong> – The process calls <code>prctl(PR_SET_DUMPABLE, 0)</code> immediately, so even if the program crashes, no sensitive information (like the master password used by gocryptfs) can leak into a core file.</li>
+        <li><strong>No stored credentials</strong> – <code>secure_mount</code> never sees or stores your passwords; it delegates all authentication to gocryptfs, which handles it securely.</li>
+        <li><strong>Single‑purpose design</strong> – The minimal codebase reduces attack surface. There are no network services, no background daemons.</li>
+        <li><strong>Safe directory creation</strong> – Mount points and cipher directories are created with <code>0700</code> permissions (owner‑read/write/execute only).</li>
+        <li><strong>Path collision prevention</strong> – The program refuses to operate if the cipher directory and mount point are identical, preventing accidental data exposure.</li>
+    </ul>
+    <blockquote>
+        ⚠️ <strong>Important</strong>: <code>secure_mount</code> is a convenience wrapper; the actual encryption strength comes from gocryptfs. Keep gocryptfs updated and use a strong passphrase.
+    </blockquote>
+
+    <h2>🛠️ Error Handling</h2>
+    <ul>
+        <li>All fork/exec failures print errors to <code>stderr</code>.</li>
+        <li>If <code>gocryptfs</code> itself fails (wrong password, missing directory, etc.), its exit code is propagated and printed.</li>
+        <li>The unmount routine tries multiple tools to accommodate different distributions (Arch uses <code>fusermount3</code>, Debian may prefer <code>fusermount</code>, some require <code>umount</code>).</li>
+    </ul>
+
+    <h2>🤝 Contributing</h2>
+    <p>Contributions are welcome! Feel free to open an issue or a pull request at <a href="https://github.com/effjy/secure_mount">https://github.com/effjy/secure_mount</a>.</p>
+    <p>Ideas for enhancements:</p>
+    <ul>
+        <li>Integration with <code>cryfs</code> as an alternative backend.</li>
+        <li>Adding support for <code>gocryptfs -ro</code> (read‑only mount).</li>
+        <li>Configuration file to remember frequently used cipher/mount pairs.</li>
+    </ul>
+
+    <h2>📜 License</h2>
+    <p>This project is licensed under the MIT License – see the <a href="LICENSE">LICENSE</a> file for details.</p>
+
+    <h2>🙏 Acknowledgements</h2>
+    <ul>
+        <li><a href="https://github.com/rfjakob/gocryptfs">gocryptfs</a> – the fantastic encrypted filesystem that makes this possible.</li>
+        <li>Everyone who helps keep secure‑by‑default tools accessible.</li>
+    </ul>
+
+    <hr>
+
+    <p class="center">
+        <strong>Encrypt your data with confidence. Secure_mount makes gocryptfs effortless.</strong><br>
+        <sub>Built with ❤️ by <a href="https://github.com/effjy">effjy</a></sub>
+    </p>
+</body>
+</html>
